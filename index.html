@@ -34,7 +34,7 @@
         // =========================================================================
         // PENTING: URL WEB APP GOOGLE APPS SCRIPT
         // =========================================================================
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx7dcv9wa17_nllD-08lAOqgS5iCt9rwjClHU65_xVjT4IGthol-rgGs_UFwgM346nQYA/exec';
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx10oOSQqy5cUSUe2KY761n0cniaJCupmu77L-CSJxGBcmvWfBo8eSo26bWVGjqCBj0ng/exec';
         
         // --- INITIAL DATA ---
         const initialVideos = {
@@ -721,21 +721,133 @@
             );
         };
 
+        const ResetPassword = ({ token, setActiveTab }) => {
+            const [newPassword, setNewPassword] = React.useState('');
+            const [confirmPassword, setConfirmPassword] = React.useState('');
+            const [status, setStatus] = React.useState(''); // '', 'loading', 'error_match', 'error_length', 'error_token', 'success'
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (newPassword !== confirmPassword) { setStatus('error_match'); return; }
+                if (newPassword.length < 6) { setStatus('error_length'); return; }
+                
+                setStatus('loading');
+
+                fetch(GAS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'changePassword', token: token, newPassword: newPassword })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        setStatus('success');
+                        setTimeout(() => {
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                            setActiveTab('home');
+                        }, 3500);
+                    } else {
+                        setStatus('error_token');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    setStatus('error_network');
+                });
+            };
+
+            if (status === 'success') {
+                return (
+                    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center animate-fade-in max-w-lg mx-auto mt-10">
+                        <div className="w-16 h-16 md:w-20 md:h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5"><Icon name="Check" className="w-8 h-8 md:w-10 md:h-10" /></div>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">Password Berhasil Diubah!</h2>
+                        <p className="text-sm md:text-base text-gray-600 mb-6">Mengarahkan Anda kembali ke halaman Home...</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 max-w-lg mx-auto mt-10 animate-fade-in">
+                    <div className="flex justify-center mb-5"><div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center"><Icon name="Edit" className="w-8 h-8" /></div></div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-2">Buat Password Baru</h2>
+                    <p className="text-sm md:text-base text-center text-gray-500 mb-8">Silakan masukkan kombinasi password admin yang baru.</p>
+                    
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="block text-sm md:text-base font-bold text-gray-700 mb-2">Password Baru (Minimal 6 karakter)</label>
+                            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} autoFocus className={`w-full p-3.5 border ${status.startsWith('error') ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-base`} placeholder="Masukkan password baru..." />
+                        </div>
+                        <div>
+                            <label className="block text-sm md:text-base font-bold text-gray-700 mb-2">Konfirmasi Password Baru</label>
+                            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={`w-full p-3.5 border ${status === 'error_match' ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition text-base`} placeholder="Ketik ulang password..." />
+                        </div>
+
+                        {status === 'error_match' && <p className="text-red-500 text-sm font-bold animate-pulse text-center">Konfirmasi password tidak cocok.</p>}
+                        {status === 'error_length' && <p className="text-red-500 text-sm font-bold animate-pulse text-center">Password harus minimal 6 karakter.</p>}
+                        {status === 'error_token' && <p className="text-red-500 text-sm font-bold animate-pulse text-center bg-red-50 p-3 rounded-lg border border-red-200">Gagal mengubah! Link ini mungkin sudah kadaluwarsa (lebih dari 15 menit) atau sudah pernah digunakan.</p>}
+                        {status === 'error_network' && <p className="text-red-500 text-sm font-bold animate-pulse text-center">Terjadi kesalahan jaringan.</p>}
+
+                        <button type="submit" disabled={status === 'loading'} className={`w-full ${status === 'loading' ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-3.5 rounded-xl transition shadow-md text-base mt-4`}>
+                            {status === 'loading' ? 'Menyimpan...' : 'Simpan Password Baru'}
+                        </button>
+                    </form>
+                </div>
+            );
+        };
+
         const LoginModal = ({ isOpen, onClose, onSuccess }) => {
             const [password, setPassword] = React.useState('');
             const [error, setError] = React.useState(false);
+            const [isChecking, setIsChecking] = React.useState(false);
+            const [isSendingReset, setIsSendingReset] = React.useState(false);
 
             if (!isOpen) return null;
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                if (password === 'admin954') { setError(false); setPassword(''); onSuccess(); } else { setError(true); }
+                setIsChecking(true);
+                setError(false);
+                
+                fetch(GAS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'verifyPassword', password: password })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    setIsChecking(false);
+                    if (result.success) { setPassword(''); onSuccess(); } else { setError(true); }
+                })
+                .catch(err => {
+                    setIsChecking(false);
+                    console.error("Error verifikasi:", err);
+                    alert("Terjadi kesalahan jaringan saat mengecek password.");
+                });
             };
 
             const handleLupaPassword = () => {
-                const subject = encodeURIComponent("Permintaan Reset Password Admin ART1S");
-                const body = encodeURIComponent("Syalom,\n\nSaya ingin mengajukan permohonan untuk mereset password Admin untuk web ART1S Tidar 1.\n\nTerima kasih.");
-                window.location.href = `mailto:tidar1.gmahk@gmail.com?subject=${subject}&body=${body}`;
+                if(isSendingReset) return;
+                setIsSendingReset(true);
+                
+                const frontendUrl = window.location.origin + window.location.pathname;
+                
+                fetch(GAS_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'requestReset', frontendUrl: frontendUrl })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    setIsSendingReset(false);
+                    if (result.success) {
+                        alert("Berhasil! Tautan rahasia untuk mereset password telah dikirim ke email tidar1.gmahk@gmail.com.\n\nSilakan cek Kotak Masuk atau folder Spam Anda. Link hanya berlaku selama 15 menit.");
+                        onClose();
+                    }
+                })
+                .catch(err => {
+                    setIsSendingReset(false);
+                    alert("Gagal memproses permintaan reset password.");
+                });
             };
 
             return (
@@ -751,9 +863,15 @@
                                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus className={`w-full p-3.5 border ${error ? 'border-red-500 bg-red-50' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-gray-800 outline-none transition text-base`} placeholder="Masukkan password..." />
                                 {error && <p className="text-red-500 text-sm mt-2 font-bold">Password salah, coba lagi.</p>}
                             </div>
-                            <button type="submit" className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3.5 rounded-xl transition shadow-md text-base">Masuk ke Dashboard</button>
+                            <button type="submit" disabled={isChecking || isSendingReset} className={`w-full ${isChecking || isSendingReset ? 'bg-gray-600' : 'bg-gray-900 hover:bg-gray-800'} text-white font-bold py-3.5 rounded-xl transition shadow-md text-base`}>
+                                {isChecking ? 'Memeriksa...' : 'Masuk ke Dashboard'}
+                            </button>
                         </form>
-                        <div className="mt-6 text-center"><button onClick={handleLupaPassword} className="text-sm md:text-base font-medium text-gray-500 hover:text-gray-900 hover:underline">Lupa Password?</button></div>
+                        <div className="mt-6 text-center">
+                            <button onClick={handleLupaPassword} disabled={isSendingReset} className="text-sm md:text-base font-medium text-gray-500 hover:text-gray-900 hover:underline">
+                                {isSendingReset ? 'Mengirim Email Reset...' : 'Lupa Password?'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
@@ -1123,8 +1241,11 @@
         };
 
         const App = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialToken = urlParams.get('resetToken');
+
             const [isAppLoading, setIsAppLoading] = React.useState(true);
-            const [activeTab, setActiveTab] = React.useState('home');
+            const [activeTab, setActiveTab] = React.useState(initialToken ? 'reset_password' : 'home');
             const [jadwalDB, setJadwalDB] = React.useState({});
             const [dataPejabat, setDataPejabat] = React.useState(initialDataPejabat);
             const [videos, setVideos] = React.useState(initialVideos);
@@ -1202,6 +1323,7 @@
 
             const renderContent = () => {
                 switch(activeTab) {
+                    case 'reset_password': return <ResetPassword token={initialToken} setActiveTab={setActiveTab} />;
                     case 'home': return <Home setActiveTab={setActiveTab} videos={videos} />;
                     case 'belajar': return <Belajar setActiveTab={setActiveTab} />;
                     case 'belajar_alkitab': return <DetailAlkitab setActiveTab={setActiveTab} dataPejabat={dataPejabat} />;
@@ -1265,7 +1387,7 @@
                     <main className="flex-1 max-w-5xl mx-auto w-full p-5 md:p-8 pb-28 md:pb-12">
                         <div className="mb-8 md:mb-10">
                             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-800 capitalize">
-                                {activeTab === 'home' ? 'Selamat Datang' : activeTab === 'belajar' ? 'Halaman Belajar' : activeTab.startsWith('belajar_') ? 'Detail Pembelajaran' : activeTab === 'keanggotaan' ? 'Keanggotaan Jemaat' : activeTab === 'member_baru' ? 'Permohonan Member Baru' : activeTab === 'pindah_masuk' ? 'Permohonan Pindah Masuk' : activeTab === 'hubungi' ? 'Hubungi Kami' : activeTab === 'form_acms' ? 'Formulir Pindah Masuk' : activeTab === 'admin_dashboard' ? 'Dashboard Admin' : activeTab}
+                                {activeTab === 'reset_password' ? 'Sistem Pemulihan Akses' : activeTab === 'home' ? 'Selamat Datang' : activeTab === 'belajar' ? 'Halaman Belajar' : activeTab.startsWith('belajar_') ? 'Detail Pembelajaran' : activeTab === 'keanggotaan' ? 'Keanggotaan Jemaat' : activeTab === 'member_baru' ? 'Permohonan Member Baru' : activeTab === 'pindah_masuk' ? 'Permohonan Pindah Masuk' : activeTab === 'hubungi' ? 'Hubungi Kami' : activeTab === 'form_acms' ? 'Formulir Pindah Masuk' : activeTab === 'admin_dashboard' ? 'Dashboard Admin' : activeTab}
                             </h2>
                             {activeTab === 'home' && <p className="text-sm md:text-base text-gray-500 mt-2 font-medium">Gereja Masehi Advent Hari Ketujuh Tidar 1 Surabaya</p>}
                             {activeTab === 'admin_dashboard' && <p className="text-sm md:text-base text-gray-500 mt-2 font-medium">Kelola jadwal ibadah, daftar pelayan jemaat, dan media konten web ART1S.</p>}
@@ -1273,16 +1395,18 @@
                         {renderContent()}
                     </main>
 
-                    <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 pb-safe z-50 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.05)]">
-                        <div className="flex justify-around items-center">
-                            {tabs.map(tab => (
-                                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center flex-1 py-3.5 transition ${activeTab.startsWith(tab.id) ? 'text-blue-600' : 'text-gray-500'}`}><Icon name={tab.icon} className={`w-6 h-6 mb-1.5 ${activeTab.startsWith(tab.id) ? 'stroke-[2.5px]' : 'stroke-2'}`} /><span className="text-[11px] font-bold">{tab.label}</span></button>
-                            ))}
-                        </div>
-                    </nav>
+                    {activeTab !== 'reset_password' && (
+                        <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 pb-safe z-50 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.05)]">
+                            <div className="flex justify-around items-center">
+                                {tabs.map(tab => (
+                                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex flex-col items-center flex-1 py-3.5 transition ${activeTab.startsWith(tab.id) ? 'text-blue-600' : 'text-gray-500'}`}><Icon name={tab.icon} className={`w-6 h-6 mb-1.5 ${activeTab.startsWith(tab.id) ? 'stroke-[2.5px]' : 'stroke-2'}`} /><span className="text-[11px] font-bold">{tab.label}</span></button>
+                                ))}
+                            </div>
+                        </nav>
+                    )}
 
                     {/* Floating Action Button (Hubungi / WA) */}
-                    {activeTab !== 'admin_dashboard' && activeTab !== 'hubungi' && (
+                    {activeTab !== 'admin_dashboard' && activeTab !== 'hubungi' && activeTab !== 'reset_password' && (
                         <button 
                             onClick={() => setActiveTab('hubungi')}
                             className="fixed bottom-24 md:bottom-8 right-5 md:right-8 z-40 bg-[#25D366] hover:bg-[#20bd5a] text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 flex items-center justify-center animate-fade-in"
