@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ART1S - GMAHK Tidar 1 Surabaya</title>
     
-    <!-- Favicon ditambahkan di sini -->
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="./art1s-bg.svg">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -174,7 +174,6 @@
                         <h3 className="font-bold text-[11px] md:text-sm leading-tight text-gray-800">Hubungi<br/>Kami</h3>
                     </div>
 
-                    {/* Tambahan 3 Tombol Baru */}
                     <a href="https://play.lagusion.org/" target="_blank" rel="noopener noreferrer" className="bg-white p-3 md:p-6 rounded-xl shadow-sm flex flex-col items-center text-center justify-center hover:bg-yellow-50 transition border border-gray-100">
                         <Icon name="Music" className="w-6 h-6 md:w-8 md:h-8 text-yellow-500 mb-1 md:mb-2" />
                         <h3 className="font-bold text-[11px] md:text-sm leading-tight text-gray-800">Lagu<br/>Sion</h3>
@@ -222,6 +221,8 @@
         );
 
         const SusunanIbadah = ({ setActiveTab, activeSabat, sabatYMD }) => {
+            const [openSection, setOpenSection] = React.useState('khotbah');
+            
             const getOfficer = (arr, role) => arr?.find(p => p.tugas === role)?.nama || "-";
             const susunan = activeSabat.susunan || defaultSusunan;
 
@@ -232,58 +233,103 @@
                 </div>
             );
 
+            const AccordionHeader = ({ id, title, icon, colorTheme }) => {
+                const themes = {
+                    blue: { bg: 'bg-blue-50', hover: 'hover:bg-blue-100', border: 'border-blue-200', text: 'text-blue-800', icon: 'text-blue-700' },
+                    green: { bg: 'bg-green-50', hover: 'hover:bg-green-100', border: 'border-green-200', text: 'text-green-800', icon: 'text-green-700' },
+                    purple: { bg: 'bg-purple-50', hover: 'hover:bg-purple-100', border: 'border-purple-200', text: 'text-purple-800', icon: 'text-purple-700' },
+                    orange: { bg: 'bg-orange-50', hover: 'hover:bg-orange-100', border: 'border-orange-200', text: 'text-orange-800', icon: 'text-orange-700' },
+                };
+                const theme = themes[colorTheme];
+                return (
+                    <button 
+                        onClick={() => setOpenSection(openSection === id ? null : id)} 
+                        className={`w-full flex justify-between items-center p-4 md:p-5 ${theme.bg} ${theme.hover} transition-colors border-b border-gray-100`}
+                    >
+                        <div className={`flex items-center text-base md:text-lg font-bold ${theme.text}`}>
+                            <Icon name={icon} className="w-5 h-5 mr-3" /> {title}
+                        </div>
+                        <Icon name="ChevronDown" className={`w-5 h-5 ${theme.icon} transition-transform duration-300 ${openSection === id ? 'rotate-180' : ''}`} />
+                    </button>
+                );
+            };
+
             return (
                 <div className="space-y-6 animate-fade-in">
                     <button onClick={() => setActiveTab('home')} className="text-blue-600 font-medium flex items-center hover:underline mb-2">&larr; Kembali ke Home</button>
                     
-                    <div className="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-gray-100">
-                        <div className="text-center mb-8">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="text-center p-6 md:p-8 border-b border-gray-100 bg-gray-50">
                             <h2 className="text-2xl font-black text-gray-800 uppercase tracking-wide">Susunan Ibadah</h2>
-                            <p className="text-gray-500 font-bold mt-1">Sabat, {formatIndoDate(sabatYMD)}</p>
+                            <p className="text-gray-500 font-bold mt-1">{formatIndoDate(sabatYMD)}</p>
                         </div>
 
-                        <div className="space-y-10">
+                        <div className="divide-y divide-gray-100 flex flex-col">
                             {/* SEKOLAH SABAT */}
-                            <div>
-                                <h3 className="text-lg font-bold text-blue-800 border-b-2 border-blue-100 pb-2 mb-4 flex items-center"><Icon name="BookOpen" className="w-5 h-5 mr-2" /> Sekolah Sabat</h3>
-                                <div className="flex flex-col">
-                                    {renderItem("Lagu Pengantar", "LS 205")}
-                                    {renderItem("Pemimpin Acara", getOfficer(activeSabat.sekolahSabat, "Pembawa Acara"))}
-                                    {renderItem("Lagu Buka", susunan.ssLaguBuka)}
-                                    {renderItem("Ayat Inti & Doa Buka", getOfficer(activeSabat.sekolahSabat, "Ayat Inti & Doa Buka"))}
-                                    {renderItem("Berita Misi", getOfficer(activeSabat.sekolahSabat, "Berita Misi"))}
-                                    {renderItem("Diskusi Sekolah Sabat", "Kelas Pemuda 1, Kelas Dewasa, Kelas Pemuda 2, Kelas Anak-anak")}
-                                    {renderItem("Pelayanan Perorangan", getOfficer(activeSabat.sekolahSabat, "Pelayanan Perorangan"))}
-                                    {renderItem("Lagu Tutup", susunan.ssLaguTutup)}
-                                    {renderItem("Doa Tutup", getOfficer(activeSabat.sekolahSabat, "Pelayanan Perorangan"))}
-                                </div>
+                            <div className="border-b border-gray-100">
+                                <AccordionHeader id="ss" title="Sekolah Sabat" icon="BookOpen" colorTheme="blue" />
+                                {openSection === 'ss' && (
+                                    <div className="p-4 md:p-6 animate-fade-in">
+                                        {renderItem("Lagu Pengantar", "LS 205")}
+                                        {renderItem("Pemimpin Acara", getOfficer(activeSabat.sekolahSabat, "Pembawa Acara"))}
+                                        {renderItem("Lagu Buka", susunan.ssLaguBuka)}
+                                        {renderItem("Ayat Inti & Doa Buka", getOfficer(activeSabat.sekolahSabat, "Ayat Inti & Doa Buka"))}
+                                        {renderItem("Berita Misi", getOfficer(activeSabat.sekolahSabat, "Berita Misi"))}
+                                        {renderItem("Diskusi Sekolah Sabat", "Kelas Pemuda 1, Kelas Dewasa, Kelas Pemuda 2, Kelas Anak-anak")}
+                                        {renderItem("Pelayanan Perorangan", getOfficer(activeSabat.sekolahSabat, "Pelayanan Perorangan"))}
+                                        {renderItem("Lagu Tutup", susunan.ssLaguTutup)}
+                                        {renderItem("Doa Tutup", getOfficer(activeSabat.sekolahSabat, "Pelayanan Perorangan"))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* KHOTBAH */}
+                            <div className="border-b border-gray-100">
+                                <AccordionHeader id="khotbah" title="Khotbah / Ibadah Umum" icon="List" colorTheme="green" />
+                                {openSection === 'khotbah' && (
+                                    <div className="p-4 md:p-6 animate-fade-in">
+                                        {renderItem("Lagu Pengantar", "LS 515")}
+                                        {renderItem("Lagu Sambutan", "LS 1")}
+                                        {renderItem("Doa Buka", getOfficer(activeSabat.khotbah, "Khotbah"))}
+                                        {renderItem("Ayat Bersahutan", susunan.kAyatBersahutan)}
+                                        {renderItem("Lagu Buka", susunan.kLaguBuka)}
+                                        {renderItem("Doa Syafaat", getOfficer(activeSabat.khotbah, "Pendamping 1"))}
+                                        {susunan.kLaguPujian1_show && renderItem("Lagu Pujian", susunan.kLaguPujian1_judul, true)}
+                                        {renderItem("Bacaan Persembahan", getOfficer(activeSabat.khotbah, "Pendamping 2"))}
+                                        {renderItem("Lagu Persembahan", "LS 260")}
+                                        {renderItem("Doa Persembahan", getOfficer(activeSabat.khotbah, "Pendamping 2"))}
+                                        {susunan.kLaguPujian2_show && renderItem("Lagu Pujian", susunan.kLaguPujian2_judul, true)}
+                                        {renderItem("Cerita Anak-anak", getOfficer(activeSabat.khotbah, "Cerita Anak-anak"))}
+                                        {susunan.kLaguPujian3_show && renderItem("Lagu Pujian", susunan.kLaguPujian3_judul, true)}
+                                        {renderItem("Ayat Inti", susunan.kAyatInti)}
+                                        {renderItem("Lagu Tema", "Misi Kita")}
+                                        {renderItem("Khotbah", getOfficer(activeSabat.khotbah, "Khotbah"), true)}
+                                        {renderItem("Lagu Tutup", susunan.kLaguTutup)}
+                                        {renderItem("Doa Berkat", "Pdt. David Indra Utomo")}
+                                        {renderItem("Lagu Berkat", "LS 60")}
+                                        {renderItem("Pengumuman", "Dept. Komunikasi")}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* DIAKON & DIAKONES */}
+                            <div className="border-b border-gray-100">
+                                <AccordionHeader id="diakon" title="Diakon & Diakones" icon="Users" colorTheme="purple" />
+                                {openSection === 'diakon' && (
+                                    <div className="p-4 md:p-6 animate-fade-in">
+                                        {activeSabat.diakon.map((p, idx) => <div key={idx}>{renderItem(p.tugas, p.nama)}</div>)}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* PELAYANAN MUSIK */}
                             <div>
-                                <h3 className="text-lg font-bold text-green-800 border-b-2 border-green-100 pb-2 mb-4 flex items-center"><Icon name="List" className="w-5 h-5 mr-2" /> Khotbah / Ibadah Umum</h3>
-                                <div className="flex flex-col">
-                                    {renderItem("Lagu Pengantar", "LS 515")}
-                                    {renderItem("Lagu Sambutan", "LS 1")}
-                                    {renderItem("Doa Buka", getOfficer(activeSabat.khotbah, "Khotbah"))}
-                                    {renderItem("Ayat Bersahutan", susunan.kAyatBersahutan)}
-                                    {renderItem("Lagu Buka", susunan.kLaguBuka)}
-                                    {renderItem("Doa Syafaat", getOfficer(activeSabat.khotbah, "Pendamping 1"))}
-                                    {susunan.kLaguPujian1_show && renderItem("Lagu Pujian", susunan.kLaguPujian1_judul, true)}
-                                    {renderItem("Bacaan Persembahan", getOfficer(activeSabat.khotbah, "Pendamping 2"))}
-                                    {renderItem("Lagu Persembahan", "LS 260")}
-                                    {renderItem("Doa Persembahan", getOfficer(activeSabat.khotbah, "Pendamping 2"))}
-                                    {susunan.kLaguPujian2_show && renderItem("Lagu Pujian", susunan.kLaguPujian2_judul, true)}
-                                    {renderItem("Cerita Anak-anak", getOfficer(activeSabat.khotbah, "Cerita Anak-anak"))}
-                                    {susunan.kLaguPujian3_show && renderItem("Lagu Pujian", susunan.kLaguPujian3_judul, true)}
-                                    {renderItem("Ayat Inti", susunan.kAyatInti)}
-                                    {renderItem("Lagu Tema", "Misi Kita")}
-                                    {renderItem("Khotbah", getOfficer(activeSabat.khotbah, "Khotbah"), true)}
-                                    {renderItem("Lagu Tutup", susunan.kLaguTutup)}
-                                    {renderItem("Doa Berkat", "Pdt. David Indra Utomo")}
-                                    {renderItem("Lagu Berkat", "LS 60")}
-                                    {renderItem("Pengumuman", "Dept. Komunikasi")}
-                                </div>
+                                <AccordionHeader id="musik" title="Pelayanan Musik" icon="Music" colorTheme="orange" />
+                                {openSection === 'musik' && (
+                                    <div className="p-4 md:p-6 animate-fade-in">
+                                        {activeSabat.musik.map((p, idx) => <div key={idx}>{renderItem(p.tugas, p.nama)}</div>)}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -447,6 +493,17 @@
 
         const Jadwal = ({ activeRabu, activeSabat, rabuYMD, sabatYMD, showPerjamuan, perjamuanYMD, activePerjamuan }) => (
             <div className="space-y-6 animate-fade-in">
+                {/* Tombol GDrive Jadwal Lengkap */}
+                <div className="bg-white p-5 rounded-xl shadow-sm border border-blue-200 bg-blue-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h3 className="font-bold text-blue-900 text-lg">Jadwal Lengkap</h3>
+                        <p className="text-sm text-blue-700 mt-1">Lihat dan unduh file PDF jadwal pelayanan bulanan / triwulan di Google Drive.</p>
+                    </div>
+                    <a href="https://drive.google.com/drive/folders/1Gcbhvg_63xKe7jAOg-ZPs8tH-f9e1m5m?usp=drive_link" target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md transition flex items-center shrink-0 w-full sm:w-auto justify-center">
+                        <Icon name="BookOpen" className="w-5 h-5 mr-2" /> Buka Google Drive
+                    </a>
+                </div>
+
                 {/* Banner Spesial Perjamuan Kudus */}
                 {showPerjamuan && (
                     <div className="bg-gradient-to-br from-purple-50 to-white p-5 md:p-6 rounded-xl shadow-md border border-purple-200 relative overflow-hidden animate-fade-in">
@@ -923,6 +980,15 @@
             const [editYoutubeUrl, setEditYoutubeUrl] = React.useState(youtubeUrl);
             const [isSavingUrl, setIsSavingUrl] = React.useState(false);
 
+            // Referensi untuk fitur scroll tombol tab
+            const scrollContainerRef = React.useRef(null);
+            const scrollTabs = (direction) => {
+                if (scrollContainerRef.current) {
+                    const scrollAmount = 250;
+                    scrollContainerRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+                }
+            };
+
             const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
             
             const getTriwulan = (m) => {
@@ -1168,12 +1234,22 @@
                         <div className={`p-4 md:p-6 ${adminTab === 'jadwal' ? 'bg-[#f4f7fa]' : 'bg-white'}`}>
                             {adminTab === 'jadwal' && (
                                 <div className="animate-fade-in space-y-4">
-                                    <div className="bg-[#eef2f6] rounded-xl flex overflow-x-auto border border-gray-200 p-2 gap-2 hide-scrollbar">
-                                        {subTabs.map(tab => (
-                                            <button key={tab.id} onClick={() => { setSubTab(tab.id); setEditingDate(null); }} className={`px-4 py-2.5 rounded-lg text-sm whitespace-nowrap transition-colors ${subTab === tab.id ? 'bg-white shadow-sm font-bold border border-gray-200 text-slate-800' : 'font-medium text-slate-500 hover:bg-slate-200'}`}>
-                                                {tab.label}
-                                            </button>
-                                        ))}
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => scrollTabs('left')} className="hidden md:flex p-2.5 bg-white border border-gray-200 rounded-lg shadow-sm text-gray-500 hover:text-gray-800 hover:bg-gray-50 shrink-0 transition" title="Scroll Kiri">
+                                            <Icon name="ChevronLeft" className="w-5 h-5" />
+                                        </button>
+                                        
+                                        <div ref={scrollContainerRef} className="bg-[#eef2f6] rounded-xl flex-1 flex overflow-x-auto border border-gray-200 p-2 gap-2 hide-scrollbar scroll-smooth">
+                                            {subTabs.map(tab => (
+                                                <button key={tab.id} onClick={() => { setSubTab(tab.id); setEditingDate(null); }} className={`px-4 py-2.5 rounded-lg text-sm whitespace-nowrap transition-colors ${subTab === tab.id ? 'bg-white shadow-sm font-bold border border-gray-200 text-slate-800' : 'font-medium text-slate-500 hover:bg-slate-200'}`}>
+                                                    {tab.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <button onClick={() => scrollTabs('right')} className="hidden md:flex p-2.5 bg-white border border-gray-200 rounded-lg shadow-sm text-gray-500 hover:text-gray-800 hover:bg-gray-50 shrink-0 transition" title="Scroll Kanan">
+                                            <Icon name="ChevronRight" className="w-5 h-5" />
+                                        </button>
                                     </div>
                                     
                                     {subTab === 'perjamuan' && (
@@ -1450,6 +1526,23 @@
             const activeSabat = jadwalDB[sabatYMD] || initialJadwalSabat;
             const activePerjamuan = jadwalDB[perjamuanYMD]?.perjamuan || initialJadwalSabat.perjamuan;
 
+            // --- LOGIKA KHUSUS HALAMAN JADWAL (HARI-H LOMPAT KE MINGGU DEPAN) ---
+            let displayRabuYMD = rabuYMD;
+            if (today.getDay() === 3) { 
+                let nextW = new Date(today); nextW.setDate(today.getDate() + 7);
+                displayRabuYMD = toYMD(nextW);
+            }
+            
+            let displaySabatYMD = sabatYMD;
+            if (today.getDay() === 6) { 
+                let nextS = new Date(today); nextS.setDate(today.getDate() + 7);
+                displaySabatYMD = toYMD(nextS);
+            }
+
+            const jadwalKhususRabu = jadwalDB[displayRabuYMD] || initialJadwalRabu;
+            const jadwalKhususSabat = jadwalDB[displaySabatYMD] || initialJadwalSabat;
+            // ----------------------------------------------------------------------
+
             // MENGAMBIL DATA DARI REST API GOOGLE APPS SCRIPT
             React.useEffect(() => {
                 fetch(`${GAS_API_URL}?action=getData`)
@@ -1493,7 +1586,7 @@
                     case 'belajar_28dasar': return <Detail28Dasar setActiveTab={setActiveTab} dataPejabat={dataPejabat} />;
                     case 'belajar_egw': return <DetailEGW setActiveTab={setActiveTab} dataPejabat={dataPejabat} />;
                     case 'live': return <Live setActiveTab={setActiveTab} activeRabu={activeRabu} activeSabat={activeSabat} rabuYMD={rabuYMD} sabatYMD={sabatYMD} showPerjamuan={showPerjamuan} perjamuanYMD={perjamuanYMD} activePerjamuan={activePerjamuan} youtubeUrl={youtubeUrl} />;
-                    case 'jadwal': return <Jadwal activeRabu={activeRabu} activeSabat={activeSabat} rabuYMD={rabuYMD} sabatYMD={sabatYMD} showPerjamuan={showPerjamuan} perjamuanYMD={perjamuanYMD} activePerjamuan={activePerjamuan} />;
+                    case 'jadwal': return <Jadwal activeRabu={jadwalKhususRabu} activeSabat={jadwalKhususSabat} rabuYMD={displayRabuYMD} sabatYMD={displaySabatYMD} showPerjamuan={showPerjamuan} perjamuanYMD={perjamuanYMD} activePerjamuan={activePerjamuan} />;
                     case 'persembahan': return <Persembahan dataPejabat={dataPejabat} />;
                     case 'keanggotaan': return <Keanggotaan setActiveTab={setActiveTab} />;
                     case 'member_baru': return <MemberBaru setActiveTab={setActiveTab} dataPejabat={dataPejabat} />;
